@@ -12,12 +12,14 @@ const app = express();
 app.use(express.json())
 app.use(cors())
 
+//CREAR LA RUTA POR CADA ESQUEMA ->
+//lo siguiente que tenemos que hacer es dar de alta
+//los elementos del almacen, editar, eliminar etc
+//entonces seria ->
+//app.use("/api/my/storage", MyStorageRoute);
+
 app.use("/api/my/user", MyUserRoute);
 
-// app.get("/test", async(req: Request, res: Response)=> {
-//     res.json({message: "Hello"});
-
-// });
 
 app.listen(8000, ()=> {
     console.log("server started at port 8000")
