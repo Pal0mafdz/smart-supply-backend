@@ -45,6 +45,22 @@ const getUsers = async (req: Request, res: Response) =>{
     }
 }
 
+const getCurrentUser = async( req: Request, res: Response) =>{
+    try{
+        const currentuser = await User.findById({ _id: req.userId});
+        if(!currentuser){
+            res.status(404).json({message: "User not found"});
+            return
+        }
+        res.json(currentuser);
+
+    }catch(error){
+        console.log(error);
+        res.status(500).json({message: "Error fetching user"});
+    }
+
+}
+
 
 
 
@@ -75,6 +91,7 @@ const getUsers = async (req: Request, res: Response) =>{
 export default {
      createCurrentUser,
      getUsers,
+     getCurrentUser,
    
     
 }
