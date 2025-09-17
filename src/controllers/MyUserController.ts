@@ -4,11 +4,10 @@ import User from "../models/user";
 const createCurrentUser = async (req: Request, res: Response)=>{
     try{
         const {auth0Id, email, name} = req.body;
-        // const existingUser = await User.findOne({auth0: auth0Id});
+
         const existingUser = await User.findOne({
             $or: [{ auth0: auth0Id }, { email }],
           });
-        //let user = await User.findOne({ auth0: auth0Id });
 
         if(existingUser){
             res.status(200).send();
@@ -28,6 +27,35 @@ const createCurrentUser = async (req: Request, res: Response)=>{
         res.status(500).json({message: "Error creating user"});
     }
 
+}
+
+const updateUserRole = async(req: Request, res: Response) => {
+    try{
+        const {userId, newRole} = req.body;
+
+        const roles = ["unauthorized", "jefe de cocina", "mesero", "almacenista", "contador", "gerente", "admin"];
+
+        if(!roles.includes(newRole)){
+            res.status(400).json({message: "Invalid role"});
+            return
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            {role: newRole},
+            {new: true}
+        )
+
+        if(!user){
+            res.status(404).json({message: "User not found"});
+            return
+        }
+        res.status(200).json(user);
+
+    }catch(error){
+        console.log(error);
+        res.status(500).json({message: "Error updating the role"});
+    }
 }
 
 
@@ -92,6 +120,7 @@ export default {
      createCurrentUser,
      getUsers,
      getCurrentUser,
+     updateUserRole,
    
     
 }
