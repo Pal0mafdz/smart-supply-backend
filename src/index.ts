@@ -3,6 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 import mongoose from "mongoose";
 import MyUserRoute from "./routes/MyUserRoute";
+import MyProductRoute from "./routes/MyProductRoute";
 
 
 
@@ -19,7 +20,7 @@ app.use(cors())
 //app.use("/api/my/storage", MyStorageRoute);
 
 app.use("/api/my/user", MyUserRoute);
-
+app.use("/api/my/product", MyProductRoute);
 
 app.listen(8000, ()=> {
     console.log("server started at port 8000")
