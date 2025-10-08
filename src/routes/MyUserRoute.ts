@@ -9,6 +9,6 @@ router.get("/", jwtCheck, jwtParse, MyUserController.getCurrentUser);
 router.get("/users", jwtCheck, jwtParse, MyUserController.getUsers);
 router.put("/", jwtCheck, jwtParse, MyUserController.updateUserRole);
 
- //router.post("/", jwtCheck, MyUserController.createAdminUser);
+ 
 
 export default router;

@@ -3,10 +3,13 @@ import express from "express";
 import {jwtCheck, jwtParse} from "../middleware/auth"
 import MyProductController from "../controllers/MyProductController";
 import MyCategoryProdController from "../controllers/MyCategoryProdController";
+import multer from "multer";
 
 const router = express.Router();
+const upload = multer();
 
-router.post("/", jwtCheck,  MyProductController.addProduct);
+router.post("/", jwtCheck, jwtParse, upload.none(),  MyProductController.addProduct);
+//router.post("/",  upload.none(),  MyProductController.addProduct);
 router.put("/:id", jwtCheck, jwtParse, MyProductController.editProduct);
 router.get("/", jwtCheck, jwtParse, MyProductController.getMyProducts );
 

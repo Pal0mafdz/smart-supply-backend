@@ -1,29 +1,20 @@
 import {Request, Response} from "express";
-import Product from "../models/product";
 
-const addMovement = async(req: Request, res: Response) =>{
+import Movement from "../models/movement";
+
+
+const getMovements = async(req: Request, res: Response) =>{
     try{
-        const {productId, quantity, user, note, type} = req.body;
-        const product = await Product.findById(productId);
-        //ver si el producto existe
-        if(!product){
-            res.status(404).json({message: "Product not found"});
-            return
-        }
-        //si el producto existe hay que validar la salida primero
-        if(type === "salida" ){
-            if(product.quantityInStock < quantity){
-                res.status(402).json({message: "No stock left"});
-                return;
-            }
-            
-        }
-
-
+        const movements = await Movement.find({}).populate("product").populate("user");
+        res.status(200).json(movements);
 
     }catch(error){
         console.log(error);
-        res.status(500).json({message: "Unable to add movement"});
+        res.status(500).json({message: "Unable to fetch all movements"});
     }
+}
 
+export default {
+    getMovements,
+    
 }

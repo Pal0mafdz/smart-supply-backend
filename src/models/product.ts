@@ -1,16 +1,6 @@
 
 import mongoose from 'mongoose'
 
-// const historySchema = new mongoose.Schema({
-//     type: { type: String, enum: ["entrada", "salida", "ajuste"], required: true},
-//     quantity: {type: Number, required: true},
-//     previousQuantity: {type: Number},
-//     newQuantity: {type: Number},
-//     user: {type: String},
-//     note: {type: String},
-//     date: {type: Date, default: Date.now}
-// })
-
 const productSchema = new mongoose.Schema({
     codeNum: {type: String, required: true},
     name: {type: String, required: true},
