@@ -5,10 +5,19 @@ import mongoose from "mongoose";
 import MyUserRoute from "./routes/MyUserRoute";
 import MyProductRoute from "./routes/MyProductRoute";
 import MyMovementsRoute from "./routes/MyMovements";
-
+import MyRecipeRoute from "./routes/RecipeRoute";
+import { v2 as cloudinary } from 'cloudinary';
 
 
 mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string).then(()=>console.log("Connected to database!!"))
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+
+});
+
 
 const app = express();
 app.use(express.json());
@@ -18,6 +27,7 @@ app.use(cors());
 app.use("/api/my/user", MyUserRoute);
 app.use("/api/my/product", MyProductRoute);
 app.use("/api/my/movement", MyMovementsRoute);
+app.use("/api/my/recipe", MyRecipeRoute);
 
 app.listen(8000, ()=> {
     console.log("server started at port 8000")

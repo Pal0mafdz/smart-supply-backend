@@ -9,7 +9,6 @@ const router = express.Router();
 const upload = multer();
 
 router.post("/", jwtCheck, jwtParse, upload.none(),  MyProductController.addProduct);
-//router.post("/",  upload.none(),  MyProductController.addProduct);
 router.put("/:id", jwtCheck, jwtParse, MyProductController.editProduct);
 router.get("/", jwtCheck, jwtParse, MyProductController.getMyProducts );
 

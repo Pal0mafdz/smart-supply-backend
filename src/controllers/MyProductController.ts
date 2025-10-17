@@ -38,102 +38,64 @@ const addProduct = async(req: Request, res: Response)=> {
     }
 }
 
-const editProduct = async(req: Request, res: Response) => {
-    try{
-        const {id} = req.params;
-
-       const {unit, unitprice, quantityInStock, note} = req.body;
-       const userId = req.userId;
-        //buscar
-        const product = await Product.findById(id);
-        if(!product){
-            res.status(404).json({message: "The product was not found"});
-            return;
+const editProduct = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { quantityInStock, note } = req.body;
+      const userId = req.userId;
+  
+      // Buscar producto
+      const product = await Product.findById(id);
+      if (!product) {
+        return res.status(404).json({ message: "The product was not found" });
+      }
+  
+      const prevQuantity = product.quantityInStock;
+      let movementType: "entrada" | "salida" | null = null;
+      let quantityChange = 0;
+  
+      // Actualizar stock si cambió
+      if (quantityInStock !== undefined && quantityInStock !== prevQuantity) {
+        if (quantityInStock > prevQuantity) {
+          movementType = "entrada";
+          quantityChange = quantityInStock - prevQuantity;
+        } else {
+          movementType = "salida";
+          quantityChange = prevQuantity - quantityInStock;
         }
-
-        const prevQuantity = product.quantityInStock;
-        const prevPrice = product.unitprice;
-
-        let movementType: "entrada" | "salida" | "ajuste" | null = null;
-        let quantityChange = 0;
-
-        if(quantityInStock !== undefined && quantityInStock !== prevQuantity){
-            if(quantityInStock > prevQuantity){
-                movementType = "entrada";
-                quantityChange = quantityInStock - prevQuantity;
-            }else {
-                movementType = "salida";
-                quantityChange = prevQuantity - quantityInStock;
-            }
-            product.quantityInStock = quantityInStock;
-        }
-
-        // if(unitprice !== undefined && unitprice !== prevPrice){
-        //     product.unitprice = unitprice || quantityInStock === prevQuantity;
-        // }
-
-        if (unitprice !== undefined && unitprice !== prevPrice &&
-            (quantityInStock === undefined || quantityInStock === prevQuantity)
-          ) {
-            movementType = "ajuste";
-          }
-      
-          if (unitprice !== undefined) {
-            product.unitprice = unitprice;
-          }
-
-        product.total = product.unitprice * product.quantityInStock;
+  
+        product.quantityInStock = quantityInStock;
+        product.total = product.unitprice * quantityInStock;
         await product.save();
-
-
-
-        let movement = null;
-        if (movementType) {
-            movement = new Movement({
-              product: product._id,
-              type: movementType,
-              quantity:
-                movementType === "ajuste"
-                  ? 0
-                  : quantityChange, // si es ajuste, cantidad = 0
-              prevQuantity,
-              newQuantity: product.quantityInStock,
-              note:
-                note ||
-                (movementType === "entrada"
-                  ? "Entrada adicional de producto"
-                  : movementType === "salida"
-                  ? "Salida por ajuste de stock"
-                  : "Ajuste de precio unitario"),
-              user: userId,
-            });
-      
-        // if(movementType){
-        //     movement = new Movement({
-        //         product: product._id,
-        //         type: movementType,
-        //         quantity: quantityChange,
-        //         prevQuantity,
-        //         newQuantity: product.quantityInStock,
-        //         note: note || (movementType === "entrada"
-        //         ? "Entrada adicional de producto"
-        //         : movementType === "salida"
-        //         ? "Salida por ajuste de stock"
-        //         : "Ajuste de informacion del producto"),
-        //         user: userId,
-        //     });
-
-          
-            await movement.save();
-        }
-
-        res.status(201).json({product: product.toObject(), movement: movement?.toObject()});
-
-    }catch(error){
-        console.log(error);
-        res.status(500).json("Unable to edit product");
+      } else {
+        return res
+          .status(400)
+          .json({ message: "No change in stock quantity" });
+      }
+  
+      // Crear movimiento
+      const movement = new Movement({
+        product: product._id,
+        type: movementType!,
+        quantity: quantityChange,
+        prevQuantity,
+        newQuantity: product.quantityInStock,
+        note: note || (movementType === "entrada" ? "Entrada de stock" : "Salida de stock"),
+        user: userId,
+      });
+  
+      await movement.save();
+  
+      res
+        .status(201)
+        .json({ product: product.toObject(), movement: movement.toObject() });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json("Unable to edit product stock");
     }
-}
+  };
+  
+
 
 const getMyProducts = async(req: Request, res: Response) =>{
     try{
