@@ -18,7 +18,7 @@ const recipeSchema = new mongoose.Schema({
     totalCost: {type: Number}, //esta sera la suma de los productos, soy Paloma no chat jajaj
     description: {type: String, required: true},
     imageUrl: {type: String, required:true},
-    typeOR: {type:String, enum: ["Entradas", "Platos fuertes","Postres"]},
+    typeOR: {type:String, enum: ["Desayunos","Entradas", "Platos fuertes","Postres"]},
     createdAt: {type: Date, default: Date.now}
 });
 

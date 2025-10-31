@@ -6,6 +6,8 @@ import MyUserRoute from "./routes/MyUserRoute";
 import MyProductRoute from "./routes/MyProductRoute";
 import MyMovementsRoute from "./routes/MyMovements";
 import MyRecipeRoute from "./routes/RecipeRoute";
+import MyTableRoute from "./routes/TableRoute";
+import MySupplierRoute from "./routes/MySupplier";
 import { v2 as cloudinary } from 'cloudinary';
 
 
@@ -28,6 +30,8 @@ app.use("/api/my/user", MyUserRoute);
 app.use("/api/my/product", MyProductRoute);
 app.use("/api/my/movement", MyMovementsRoute);
 app.use("/api/my/recipe", MyRecipeRoute);
+app.use("/api/my/table", MyTableRoute);
+app.use("/api/my/supplier", MySupplierRoute);
 
 app.listen(8000, ()=> {
     console.log("server started at port 8000")

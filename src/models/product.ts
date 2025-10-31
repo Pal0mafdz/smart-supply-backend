@@ -10,9 +10,13 @@ const productSchema = new mongoose.Schema({
     unitprice: {type: Number, required: true}, //precio por unidad
     total: {type:Number}, //total multiplicacion
     date: {type: Date, default: Date.now},
+    // supplier: {type: mongoose.Schema.Types.ObjectId, ref: "Supplier"},
+    
+
 
 })
 
+//
 
 const Product = mongoose.model("Product", productSchema);
 export default Product;

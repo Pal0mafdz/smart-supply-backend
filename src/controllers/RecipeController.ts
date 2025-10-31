@@ -24,7 +24,7 @@ const addRecipe = async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Recipename and description are required" });
       }
 
-      const validTypes = ["Entradas", "Platos fuertes", "Postres"];
+      const validTypes = ["Desayunos", "Entradas", "Platos fuertes", "Postres"];
       if (!typeOR || !validTypes.includes(typeOR)) {
         res.status(400).json({ message: "Invalid or missing typeOR value" });
         return;
@@ -132,6 +132,7 @@ const editRecipe = async(req: Request, res: Response) => {
     const {recipename, description, typeOR} = req.body;
     let {products} = req.body;
 
+    console.log("receta", req.body);
     if(!recipename || !description){
       res.status(400).json({message: "Recipe name and description are required"});
       return;
@@ -143,7 +144,7 @@ const editRecipe = async(req: Request, res: Response) => {
       return;
     }
 
-    const validTypes = ["Entradas", "Platos fuertes", "Postres"];
+    const validTypes = ["Desayunos", "Entradas", "Platos fuertes", "Postres"];
     if (!typeOR || !validTypes.includes(typeOR)) {
       return res
         .status(400)
