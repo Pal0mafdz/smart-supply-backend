@@ -9,6 +9,7 @@ declare global{
       interface Request{
         userId: string;
         auth0Id: string;
+        userRole: string;
       }
   
     }
@@ -43,6 +44,7 @@ export const jwtCheck = auth({
         
         req.auth0Id = auth0Id as string;
         req.userId = user._id.toString();
+        req.userRole = user.role;
         next();
   
         console.log("decoded", decoded);

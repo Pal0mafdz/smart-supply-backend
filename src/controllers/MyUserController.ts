@@ -1,5 +1,65 @@
 import {Request, Response} from "express";
 import User from "../models/user";
+import cloudinary from 'cloudinary';
+
+const uploadImage = async (file: Express.Multer.File) =>{
+    const image = file;
+    const base64Image = Buffer.from(image.buffer).toString("base64");
+    const dataURI = `data:${image.mimetype};base64,${base64Image}`;
+
+    const uploadResponse = await cloudinary.v2.uploader.upload(dataURI);
+    return uploadResponse.url;
+}
+
+
+const updateCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authorized" });
+    }
+
+    // Campos permitidos
+    const { name, lastname, phone, bio, gender } = req.body as {
+      name?: string;
+      lastname?: string;
+      phone?: string;
+      bio?: string;
+      gender?: "female" | "male" | "non-binary" | "other" | "prefer-not-to-say";
+    };
+
+    // Valida gender si viene
+    const validGenders = ["female", "male", "non-binary", "other", "prefer-not-to-say"];
+    if (gender && !validGenders.includes(gender)) {
+      return res.status(400).json({ message: "Invalid gender" });
+    }
+
+    const updates: Record<string, any> = {};
+    if (name !== undefined) updates.name = name;
+    if (lastname !== undefined) updates.lastname = lastname;
+    if (phone !== undefined) updates.phone = phone;
+    if (bio !== undefined) updates.bio = bio;
+    if (gender !== undefined) updates.gender = gender;
+
+    // Imagen opcional (campo: image)
+    if (req.file) {
+      const url = await uploadImage(req.file);
+      updates.avatarUrl = url;
+    }
+
+    const updated = await User.findByIdAndUpdate(userId, updates, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(updated.toObject());
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error updating user" });
+  }
+};
+
+
 
 const createCurrentUser = async (req: Request, res: Response)=>{
     try{
@@ -33,7 +93,7 @@ const updateUserRole = async(req: Request, res: Response) => {
     try{
         const {userId, newRole} = req.body;
 
-        const roles = ["unauthorized", "jefe de cocina", "mesero", "almacenista", "contador", "gerente", "admin"];
+        const roles = ["unauthorized", "jefe de cocina", "mesero", "almacenista", "contador", "gerente", "admin", "capitan"];
 
         if(!roles.includes(newRole)){
             res.status(400).json({message: "Invalid role"});
@@ -92,6 +152,8 @@ const getCurrentUser = async( req: Request, res: Response) =>{
 
 
 
+
+
 // const createAdminUser = async () => {
 //     try {
 //       const existingAdmin = await User.findOne({ role: "admin" });
@@ -121,6 +183,7 @@ export default {
      getUsers,
      getCurrentUser,
      updateUserRole,
+     updateCurrentUser,
    
     
 }

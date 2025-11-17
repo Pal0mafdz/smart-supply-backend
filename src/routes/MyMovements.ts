@@ -6,5 +6,6 @@ const router = express.Router();
 
 // router.post("/", jwtCheck, jwtParse, MovementsController.addMovement);
 router.get("/", jwtCheck, jwtParse, MovementsController.getMovements);
+router.get("/export", jwtCheck, jwtParse, MovementsController.exportMovementsExcel);
 
 export default router;

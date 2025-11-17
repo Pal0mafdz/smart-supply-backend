@@ -1,10 +1,140 @@
 import {Request, Response} from "express";
 import Product from "../models/product";
 import Movement from "../models/movement";
+import Shrinkage from "../models/shrinkage";
+import ExcelJS from "exceljs";
+
+
+
+const exportProductsExcel = async(req: Request, res: Response)=> {
+  try{
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=productos.xlsx"
+    );
+
+    
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: res });
+    const worksheet = workbook.addWorksheet("Productos");
+
+    worksheet.columns = [
+      { header: "Código", key: "codeNum", width: 15 },
+      { header: "Nombre", key: "name", width: 30 },
+      { header: "Categoría", key: "category", width: 25 },
+      { header: "Unidad", key: "unit", width: 12 },
+      { header: "Cantidad", key: "quantityInStock", width: 12 },
+      { header: "Precio Unitario", key: "unitprice", width: 18 },
+      { header: "Total", key: "total", width: 18 },
+      { header: "Maximo en el Inventario", key: "maxStock", width: 30 },
+      { header: "Minimo en el Inventario", key: "minStock", width: 30 },
+    ];
+
+    const products = await Product.find().populate("category", "name");
+
+    for (const prod of products) {
+      const precioUnitario = `$${prod.unitprice.toFixed(2)}`;
+      const total = `$${(prod.total || prod.quantityInStock * prod.unitprice).toFixed(2)}`;
+    
+      worksheet.addRow([
+        prod.codeNum,
+        prod.name,
+        (prod.category as any)?.name || "Sin categoría",
+        prod.unit,
+        prod.quantityInStock,
+        precioUnitario,
+        total,
+        prod.maxStock,
+        prod.minStock,
+        
+        
+      ]).commit();
+    }
+
+    await worksheet.commit();
+    await workbook.commit();
+
+  
+  }catch(error){
+    console.error("Error exporting products:", error);
+    res.status(500).json({ message: "Error exporting products to Excel" });
+  }
+}
+
+const addShrinkage = async(req: Request, res: Response)=> {
+  try{
+    const userId = req.userId;
+    const { productId, quantityLost, description } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ message: "User not authorized" });
+      return
+    }
+
+    if (!productId || !quantityLost || quantityLost <= 0) {
+      res.status(400).json({ message: "Product ID and a valid quantity are required" });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      res.status(404).json({ message: "Product not found" });
+      return 
+    }
+
+
+    if (product.quantityInStock < quantityLost) {
+      res.status(400).json({ message: "Not enough stock to register this shrinkage" });
+      return 
+    }
+
+    const prevQuantity = product.quantityInStock;
+    const newQuantity = prevQuantity - quantityLost;
+
+
+    product.quantityInStock = newQuantity;
+    product.total = product.unitprice * newQuantity;
+    await product.save();
+
+
+    const movement = new Movement({
+      product: product._id,
+      type: "salida",
+      quantity: quantityLost,
+      prevQuantity,
+      newQuantity,
+      note: description || "Merma registrada",
+      user: userId,
+    });
+    await movement.save();
+
+
+    const shrinkage = new Shrinkage({
+      description: description || "Merma registrada",
+      user: userId,
+      product: product._id,
+      date: new Date(),
+    });
+    await shrinkage.save();
+
+    res.status(201).json({
+      message: "Shrinkage recorded successfully",
+      shrinkage: shrinkage.toObject(),
+      movement: movement.toObject(),
+      product: product.toObject(),
+    });
+
+  }catch(error){
+    console.log(error)
+    res.status(500).json({message: "unable to add "})
+  }
+}
 
 const addProduct = async(req: Request, res: Response)=> {
     try{
-        const { codeNum, name, unitprice, quantityInStock, unit, category, note } = req.body;
+        const { codeNum, name, unitprice, quantityInStock, unit, category, note, minStock, maxStock } = req.body;
         const userId = req.userId;
 
         if(!userId){
@@ -17,9 +147,15 @@ const addProduct = async(req: Request, res: Response)=> {
             res.status(409).json({message: "This product already exists"});
             return;
         }
+
+        if (minStock && maxStock && Number(maxStock) < Number(minStock)) {
+          return res.status(400).json({ message: "maxStock must be greater than or equal to minStock" });
+        }
+
         const total = unitprice * quantityInStock;
 
-        const product = new Product({codeNum, name, category, unit, quantityInStock, unitprice, total});
+        const product = new Product({codeNum, name, category, unit, quantityInStock, unitprice, total, minStock: minStock ?? 0,
+          maxStock: maxStock ?? 0,});
         await product.save();
 
         const movement = new Movement({
@@ -151,5 +287,6 @@ export default{
     getMyProducts,
     deleteProduct,
     getProductById,
+    exportProductsExcel
     
 }

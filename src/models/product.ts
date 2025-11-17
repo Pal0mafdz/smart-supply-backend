@@ -10,7 +10,9 @@ const productSchema = new mongoose.Schema({
     unitprice: {type: Number, required: true}, //precio por unidad
     total: {type:Number}, //total multiplicacion
     date: {type: Date, default: Date.now},
-    // supplier: {type: mongoose.Schema.Types.ObjectId, ref: "Supplier"},
+    minStock: {type: Number, default: 0},
+    maxStock: {type: Number, default: 0},
+ 
     
 
 
