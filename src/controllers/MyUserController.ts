@@ -16,22 +16,23 @@ const updateCurrentUser = async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
     if (!userId) {
-      return res.status(401).json({ message: "User not authorized" });
+      res.status(401).json({ message: "User not authorized" });
+      return;
     }
 
-    // Campos permitidos
     const { name, lastname, phone, bio, gender } = req.body as {
       name?: string;
       lastname?: string;
       phone?: string;
       bio?: string;
-      gender?: "female" | "male" | "non-binary" | "other" | "prefer-not-to-say";
+      gender?: "masculino"| "femenino" | "no binario"| "otro"| "prefiero no decirlo"| "";
     };
 
-    // Valida gender si viene
-    const validGenders = ["female", "male", "non-binary", "other", "prefer-not-to-say"];
+   
+    const validGenders = ["masculino", "femenino", "no binario", "otro", "prefiero no decirlo", ""];
     if (gender && !validGenders.includes(gender)) {
-      return res.status(400).json({ message: "Invalid gender" });
+      res.status(400).json({ message: "Invalid gender" });
+      return;
     }
 
     const updates: Record<string, any> = {};
@@ -41,7 +42,7 @@ const updateCurrentUser = async (req: Request, res: Response) => {
     if (bio !== undefined) updates.bio = bio;
     if (gender !== undefined) updates.gender = gender;
 
-    // Imagen opcional (campo: image)
+   
     if (req.file) {
       const url = await uploadImage(req.file);
       updates.avatarUrl = url;

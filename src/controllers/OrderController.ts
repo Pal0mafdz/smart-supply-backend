@@ -14,7 +14,7 @@ const getTablesOverTwoHours = async(req: Request, res: Response)=> {
       const tables = await Table.find({
         state: "abierta",
         openedAt: { $lte: twoHoursAgo },
-      }).populate("waiter", "email");
+      }).populate("waiter", "email", "name");
 
       const now = Date.now();
 
@@ -85,6 +85,29 @@ const getTables = async(req: Request, res: Response)=> {
     }
 }
 
+const setTableAvailable = async(req: Request, res: Response)=> {
+  try{
+    const {tableId} = req.params;
+
+    const table = await Table.findById(tableId);
+    if(!table){
+      res.status(404).json({message: "Table npt found"});
+      return;
+    }
+
+    if(table.state !== "cerrada" ){
+      res.status(400).json({message: "Table must be closed before updating the status to available"});
+      return;
+    }
+    table.state = "disponible"
+    await table.save();
+    res.json({message: "Estatus actualizado",table })
+
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: "Unable to change table status"})
+  }
+}
 
 const openTable = async (req: Request, res: Response) => {
     try {
@@ -107,7 +130,7 @@ const openTable = async (req: Request, res: Response) => {
         });
       }
   
-      // Actualizar estado de la mesa
+
       table.state = "abierta";
       table.customers = customers;
       table.openedAt = new Date();
@@ -137,11 +160,7 @@ const openTable = async (req: Request, res: Response) => {
         order: newOrder._id,
       });
 
-      // res.status(200).json({
-      //   message: "Table opened and new order created",
-      //   table: table._id,
-      //   order: newOrder._id,
-      // });
+    
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Something went wrong" });
@@ -191,8 +210,8 @@ const openTable = async (req: Request, res: Response) => {
     await order.save();
 
     const populated = await Order.findById(orderId).populate(
-      "dishes.recipe",
-      "recipename totalCost"
+      "dishes.recipe", "recipename totalCost imageUrl"
+      
     );
 
     res.status(200).json({ message: "Dish added successfully", order: populated });
@@ -331,8 +350,8 @@ const getOrders = async(req: Request, res: Response) => {
 
 
     const orders = await Order.find(filter)
-      .populate("dishes.recipe", "recipename totalCost")
-      .populate("waiter", "name");
+      .populate("dishes.recipe")
+      .populate("waiter", "name").sort({date: -1});
 
     if (!orders || orders.length === 0) {
       return res.status(404).json({ message: "No orders found" });
@@ -474,5 +493,6 @@ export default{
     sendToKitchen,
     sendNewDishesToKitchen,
     getTablesOverTwoHours,
+    setTableAvailable,
 
 }

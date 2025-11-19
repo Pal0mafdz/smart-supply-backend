@@ -87,15 +87,43 @@ const getSales = async(req: Request, res: Response) => {
         const { startDate, endDate } = req.query;
 
         let filter: Record<string, any> = {};
+
+        // if (startDate && endDate) {
+        //   // inicio de día
+        //   const start = new Date(startDate as string);
+        //   start.setHours(0, 0, 0, 0);
+    
+        //   // fin de día
+        //   const end = new Date(endDate as string);
+        //   end.setHours(23, 59, 59, 999);
+    
+        //   filter.createdAt = {
+        //     $gte: start,
+        //     $lte: end,
+        //   };
+        // }
     
 
+        // if (startDate && endDate) {
+        //   filter.createdAt = {
+        //     $gte: new Date(startDate as string),
+        //     $lte: new Date(endDate as string),
+        //   };
+        // }
+    
         if (startDate && endDate) {
+          const start = new Date(startDate as string);
+          start.setUTCHours(6, 0, 0, 0); // inicio del día México UTC-6
+        
+          const end = new Date(endDate as string);
+          end.setUTCHours(29, 59, 59, 999); 
+          // 23 + 6 = 29 → JS lo convierte automáticamente a 05:59 del día siguiente UTC
+        
           filter.createdAt = {
-            $gte: new Date(startDate as string),
-            $lte: new Date(endDate as string),
+            $gte: start,
+            $lte: end
           };
         }
-    
 
         const sales = await Sale.find(filter)
           .populate("order")

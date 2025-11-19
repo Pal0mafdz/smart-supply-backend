@@ -2,7 +2,7 @@ import mongoose, { mongo } from "mongoose";
 
 const movementSchema = new mongoose.Schema({
     product: {type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true},
-    type: {type: String, enum:["entrada", "salida", "ajuste"], required: true},
+    type: {type: String, enum:["entrada", "salida", "merma"], required: true},
     quantity: {type: Number, required: true},
     prevQuantity: {type: Number},
     newQuantity: {type: Number},

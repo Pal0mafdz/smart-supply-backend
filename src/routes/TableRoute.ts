@@ -12,6 +12,7 @@ router.get("/orders", jwtCheck, jwtParse, OrderController.getOrders);
 router.get("/over-two-hours", jwtCheck, jwtParse, OrderController.getTablesOverTwoHours);
 
 
+
 router.put("/:tableId/open", jwtCheck, jwtParse, OrderController.openTable);
 router.post("/order/:orderId/dishes", jwtCheck, jwtParse, OrderController.AddDish);
 
@@ -23,6 +24,7 @@ router.delete("/order/:orderId/dishes/:dishId", jwtCheck, jwtParse, OrderControl
 router.post("/order/:orderId/send-to-kitchen", jwtCheck, jwtParse, OrderController.sendToKitchen);
 router.post("/order/:orderId/send-new-dishes",jwtCheck, jwtParse, OrderController.sendNewDishesToKitchen
   );
+router.put("/:tableId/available", jwtCheck, jwtParse, OrderController.setTableAvailable);
 
 
 
