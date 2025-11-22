@@ -16,11 +16,13 @@ router.get("/export", jwtCheck, jwtParse, MyProductController.exportProductsExce
 
 router.post("/category", jwtCheck, MyCategoryProdController.addCategoryProd);
 router.get("/category", jwtCheck, jwtParse,MyCategoryProdController.getCategories);
+router.get("/shrinkages", jwtCheck, jwtParse, MyProductController.getShrinkages)
 router.delete("/category/:id", jwtCheck, jwtParse, MyCategoryProdController.deleteCategoryProd);
 
 // hasta el final las que usan /:id
 router.delete("/:id", jwtCheck, jwtParse, MyProductController.deleteProduct);
 router.get("/:id", jwtCheck, jwtParse, MyProductController.getProductById);
+
 
 
 

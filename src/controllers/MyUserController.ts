@@ -20,6 +20,7 @@ const updateCurrentUser = async (req: Request, res: Response) => {
       return;
     }
 
+
     const { name, lastname, phone, bio, gender } = req.body as {
       name?: string;
       lastname?: string;

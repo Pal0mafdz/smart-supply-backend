@@ -4,7 +4,16 @@ import Movement from "../models/movement";
 import Shrinkage from "../models/shrinkage";
 import ExcelJS from "exceljs";
 
+const getShrinkages = async(req: Request, res: Response)=> {
+  try{
+    const shrinkages = await Shrinkage.find({}).populate("product").populate("user").sort({date: -1});
+        res.status(200).json(shrinkages);
 
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message:"Unable to fetch shrinkages"});
+  }
+}
 
 const exportProductsExcel = async(req: Request, res: Response)=> {
   try{
@@ -174,62 +183,169 @@ const addProduct = async(req: Request, res: Response)=> {
     }
 }
 
+// const editProduct = async (req: Request, res: Response) => {
+//     try {
+//       const { id } = req.params;
+//       const { quantityInStock, note } = req.body;
+//       const userId = req.userId;
+  
+//       // Buscar producto
+//       const product = await Product.findById(id);
+//       if (!product) {
+//         return res.status(404).json({ message: "The product was not found" });
+//       }
+  
+//       const prevQuantity = product.quantityInStock;
+//       let movementType: "entrada" | "salida" | null = null;
+//       let quantityChange = 0;
+  
+//       // Actualizar stock si cambió
+//       if (quantityInStock !== undefined && quantityInStock !== prevQuantity) {
+//         if (quantityInStock > prevQuantity) {
+//           movementType = "entrada";
+//           quantityChange = quantityInStock - prevQuantity;
+//         } else {
+//           movementType = "salida";
+//           quantityChange = prevQuantity - quantityInStock;
+//         }
+  
+//         product.quantityInStock = quantityInStock;
+//         product.total = product.unitprice * quantityInStock;
+//         await product.save();
+//       } else {
+//         return res
+//           .status(400)
+//           .json({ message: "No change in stock quantity" });
+//       }
+  
+//       // Crear movimiento
+//       const movement = new Movement({
+//         product: product._id,
+//         type: movementType!,
+//         quantity: quantityChange,
+//         prevQuantity,
+//         newQuantity: product.quantityInStock,
+//         note: note || (movementType === "entrada" ? "Entrada de stock" : "Salida de stock"),
+//         user: userId,
+//       });
+  
+//       await movement.save();
+  
+//       res
+//         .status(201)
+//         .json({ product: product.toObject(), movement: movement.toObject() });
+//     } catch (error) {
+//       console.log(error);
+//       res.status(500).json("Unable to edit product stock");
+//     }
+//   };
+
+
 const editProduct = async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const { quantityInStock, note } = req.body;
-      const userId = req.userId;
-  
-      // Buscar producto
-      const product = await Product.findById(id);
-      if (!product) {
-        return res.status(404).json({ message: "The product was not found" });
+  try {
+    const { id } = req.params;
+    const { type, quantity, description } = req.body;
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authorized" });
+    }
+
+    if (!type || !["entrada", "salida", "merma"].includes(type)) {
+      return res.status(400).json({ message: "Invalid movement type" });
+    }
+
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ message: "Quantity must be greater than 0" });
+    }
+
+   
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const prevQuantity = product.quantityInStock;
+    let newQuantity = prevQuantity;
+
+    
+    if (type === "entrada") {
+      newQuantity = prevQuantity + quantity;
+    }
+
+
+    if (type === "salida") {
+      if (prevQuantity < quantity) {
+        return res.status(400).json({ message: "Not enough stock for salida" });
       }
-  
-      const prevQuantity = product.quantityInStock;
-      let movementType: "entrada" | "salida" | null = null;
-      let quantityChange = 0;
-  
-      // Actualizar stock si cambió
-      if (quantityInStock !== undefined && quantityInStock !== prevQuantity) {
-        if (quantityInStock > prevQuantity) {
-          movementType = "entrada";
-          quantityChange = quantityInStock - prevQuantity;
-        } else {
-          movementType = "salida";
-          quantityChange = prevQuantity - quantityInStock;
-        }
-  
-        product.quantityInStock = quantityInStock;
-        product.total = product.unitprice * quantityInStock;
-        await product.save();
-      } else {
+      newQuantity = prevQuantity - quantity;
+    }
+
+
+    let shrinkageRecord = null;
+    
+
+    if (type === "merma") {
+      if (prevQuantity < quantity) {
         return res
           .status(400)
-          .json({ message: "No change in stock quantity" });
+          .json({ message: "Not enough stock to register shrinkage" });
       }
-  
-      // Crear movimiento
-      const movement = new Movement({
-        product: product._id,
-        type: movementType!,
-        quantity: quantityChange,
-        prevQuantity,
-        newQuantity: product.quantityInStock,
-        note: note || (movementType === "entrada" ? "Entrada de stock" : "Salida de stock"),
+
+      newQuantity = prevQuantity - quantity;
+
+
+      const shrinkage = new Shrinkage({
+        description: description || "Merma registrada",
         user: userId,
+        product: product._id,
+        decQuantity: quantity,
+        date: new Date(),
       });
-  
-      await movement.save();
-  
-      res
-        .status(201)
-        .json({ product: product.toObject(), movement: movement.toObject() });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json("Unable to edit product stock");
+
+      await shrinkage.save();
+      shrinkageRecord = shrinkage.toObject();
     }
-  };
+
+
+    product.quantityInStock = newQuantity;
+    product.total = product.unitprice * newQuantity;
+    await product.save();
+
+    
+    const movement = new Movement({
+      product: product._id,
+      type,
+      quantity,
+      prevQuantity,
+      newQuantity,
+      note:
+        description ||
+        (type === "entrada"
+          ? "Entrada de stock"
+          : type === "salida"
+          ? "Salida de stock"
+          : type === "merma"
+          ? "Merma registrada"
+          : "Se registro un movimiento"),
+      user: userId,
+    });
+
+    await movement.save();
+
+    res.status(200).json({
+      message: "Stock updated successfully",
+      product: product.toObject(),
+      movement: movement.toObject(),
+    
+      shrinkage: shrinkageRecord || null,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Unable to edit stock" });
+  }
+};
+
   
 
 
@@ -287,6 +403,7 @@ export default{
     getMyProducts,
     deleteProduct,
     getProductById,
-    exportProductsExcel
+    exportProductsExcel,
+    getShrinkages,
     
 }

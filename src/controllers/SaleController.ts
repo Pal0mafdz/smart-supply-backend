@@ -5,6 +5,19 @@ import Payment from "../models/payment";
 import Order from "../models/order";
 import Table from "../models/table";
 
+
+const getPayments = async(req: Request, res: Response) =>{
+  try{
+      const payments = await Payment.find({}).populate("user").sort({date: -1}); 
+      // const movements = await Payment.find({}).populate("product").populate("user").sort({date: -1});
+      res.status(200).json(payments);
+
+  }catch(error){
+      console.log(error);
+      res.status(500).json({message: "Unable to fetch all movements"});
+  }
+}
+
 const registerPayment = async(req: Request, res: Response) => {
   try{
     const userId = req.userId;
@@ -345,4 +358,5 @@ export default{
     getSalesByRecipeAndPeriod,
     getSalesByPeriod,
     registerPayment,
+    getPayments,
 }

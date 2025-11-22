@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
     lastname: {type: String},
     phone: {type: String},
     bio: {type: String},
+    avatarUrl: {type: String},
     gender: {type: String, enum: ["masculino", "femenino", "no binario", "otro", "prefiero no decirlo", ""], default: ""},
     role:  {type: String, enum: ["unauthorized", "jefe de cocina", "mesero", "almacenista", "contador", "gerente", "admin", "capitan"], required: true},
 }, {timestamps: true});
