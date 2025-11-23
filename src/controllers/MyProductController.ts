@@ -40,6 +40,7 @@ const exportProductsExcel = async(req: Request, res: Response)=> {
       { header: "Total", key: "total", width: 18 },
       { header: "Maximo en el Inventario", key: "maxStock", width: 30 },
       { header: "Minimo en el Inventario", key: "minStock", width: 30 },
+      { header: "Proveedor", key: "supplier", width: 25 },
     ];
 
     const products = await Product.find().populate("category", "name");
@@ -58,7 +59,7 @@ const exportProductsExcel = async(req: Request, res: Response)=> {
         total,
         prod.maxStock,
         prod.minStock,
-        
+        (prod.supplier as any)?.name || "Sin proveedor",
         
       ]).commit();
     }
@@ -73,83 +74,91 @@ const exportProductsExcel = async(req: Request, res: Response)=> {
   }
 }
 
-const addShrinkage = async(req: Request, res: Response)=> {
-  try{
-    const userId = req.userId;
-    const { productId, quantityLost, description } = req.body;
+// const addShrinkage = async(req: Request, res: Response)=> {
+//   try{
+//     const userId = req.userId;
+//     const { productId, quantityLost, description } = req.body;
 
-    if (!userId) {
-      res.status(401).json({ message: "User not authorized" });
-      return
-    }
+//     if (!userId) {
+//       res.status(401).json({ message: "User not authorized" });
+//       return
+//     }
 
-    if (!productId || !quantityLost || quantityLost <= 0) {
-      res.status(400).json({ message: "Product ID and a valid quantity are required" });
-    }
+//     if (!productId || !quantityLost || quantityLost <= 0) {
+//       res.status(400).json({ message: "Product ID and a valid quantity are required" });
+//     }
 
-    const product = await Product.findById(productId);
-    if (!product) {
-      res.status(404).json({ message: "Product not found" });
-      return 
-    }
-
-
-    if (product.quantityInStock < quantityLost) {
-      res.status(400).json({ message: "Not enough stock to register this shrinkage" });
-      return 
-    }
-
-    const prevQuantity = product.quantityInStock;
-    const newQuantity = prevQuantity - quantityLost;
+//     const product = await Product.findById(productId);
+//     if (!product) {
+//       res.status(404).json({ message: "Product not found" });
+//       return 
+//     }
 
 
-    product.quantityInStock = newQuantity;
-    product.total = product.unitprice * newQuantity;
-    await product.save();
+//     if (product.quantityInStock < quantityLost) {
+//       res.status(400).json({ message: "Not enough stock to register this shrinkage" });
+//       return 
+//     }
+
+//     const prevQuantity = product.quantityInStock;
+//     const newQuantity = prevQuantity - quantityLost;
 
 
-    const movement = new Movement({
-      product: product._id,
-      type: "salida",
-      quantity: quantityLost,
-      prevQuantity,
-      newQuantity,
-      note: description || "Merma registrada",
-      user: userId,
-    });
-    await movement.save();
+//     product.quantityInStock = newQuantity;
+//     product.total = product.unitprice * newQuantity;
+//     await product.save();
 
 
-    const shrinkage = new Shrinkage({
-      description: description || "Merma registrada",
-      user: userId,
-      product: product._id,
-      date: new Date(),
-    });
-    await shrinkage.save();
+//     const movement = new Movement({
+//       product: product._id,
+//       type: "salida",
+//       quantity: quantityLost,
+//       prevQuantity,
+//       newQuantity,
+//       note: description || "Merma registrada",
+//       user: userId,
+//     });
+//     await movement.save();
 
-    res.status(201).json({
-      message: "Shrinkage recorded successfully",
-      shrinkage: shrinkage.toObject(),
-      movement: movement.toObject(),
-      product: product.toObject(),
-    });
 
-  }catch(error){
-    console.log(error)
-    res.status(500).json({message: "unable to add "})
-  }
-}
+//     const shrinkage = new Shrinkage({
+//       description: description || "Merma registrada",
+//       user: userId,
+//       product: product._id,
+//       date: new Date(),
+//     });
+//     await shrinkage.save();
+
+//     res.status(201).json({
+//       message: "Shrinkage recorded successfully",
+//       shrinkage: shrinkage.toObject(),
+//       movement: movement.toObject(),
+//       product: product.toObject(),
+//     });
+
+//   }catch(error){
+//     console.log(error)
+//     res.status(500).json({message: "unable to add "})
+//   }
+// }
 
 const addProduct = async(req: Request, res: Response)=> {
     try{
-        const { codeNum, name, unitprice, quantityInStock, unit, category, note, minStock, maxStock } = req.body;
+        const { codeNum, name, unitprice, quantityInStock, unit, category, note, minStock, maxStock, supplier } = req.body;
         const userId = req.userId;
 
         if(!userId){
             res.status(401).json({message: "user not found"});
+            return
 
         }
+        
+
+        if(!supplier){
+          res.status(401).json({message: "supplier not found"});
+          return
+        }
+
 
         const exisitingProduct = await Product.findOne({codeNum});
         if(exisitingProduct){
@@ -164,7 +173,7 @@ const addProduct = async(req: Request, res: Response)=> {
         const total = unitprice * quantityInStock;
 
         const product = new Product({codeNum, name, category, unit, quantityInStock, unitprice, total, minStock: minStock ?? 0,
-          maxStock: maxStock ?? 0,});
+          maxStock: maxStock ?? 0, supplier});
         await product.save();
 
         const movement = new Movement({
@@ -172,6 +181,7 @@ const addProduct = async(req: Request, res: Response)=> {
             quantity: quantityInStock, prevQuantity: 0, newQuantity: quantityInStock, 
             note: note || "Alta inicial de producto",
             user: userId,});
+            
 
             await movement.save();
 
@@ -351,7 +361,7 @@ const editProduct = async (req: Request, res: Response) => {
 
 const getMyProducts = async(req: Request, res: Response) =>{
     try{
-        const products = await Product.find({}).populate("category");
+        const products = await Product.find({}).populate("category").populate("supplier");
         res.status(200).json(products);
 
     }catch(error){

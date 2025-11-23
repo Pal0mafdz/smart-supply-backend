@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema({
     date: {type: Date, default: Date.now},
     minStock: {type: Number, default: 0},
     maxStock: {type: Number, default: 0},
+    supplier: {type: mongoose.Schema.Types.ObjectId, ref: "Supplier", required: true},
  
     
 

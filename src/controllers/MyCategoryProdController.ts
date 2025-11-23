@@ -1,5 +1,6 @@
 import {Request, Response} from "express";
 import CategoryProd from "../models/categoryProd";
+import Product from "../models/product";
 
 const addCategoryProd = async(req: Request, res: Response) =>{
     try{
@@ -25,6 +26,15 @@ const addCategoryProd = async(req: Request, res: Response) =>{
 const deleteCategoryProd = async(req: Request, res: Response) =>{
     try{
         const {id} = req.params;
+
+        const productsUsingCategory = await Product.find({ category: id });
+
+        if (productsUsingCategory.length > 0) {
+        res.status(400).json({
+            message: "No se puede eliminar la categoría porque tiene productos asociados.",
+        });
+        return
+        }
 
         const category = await CategoryProd.findByIdAndDelete(id);
 
