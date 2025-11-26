@@ -5,7 +5,6 @@ export interface SupplierRecommendation {
   relativePriceComment?: string; // "barato" | "medio" | "caro"
 }
 
-// --- TUS PROVEEDORES CON PRODUCTOS Y PRECIOS ---
 
 type SupplierProduct = {
   codeNum: string;
