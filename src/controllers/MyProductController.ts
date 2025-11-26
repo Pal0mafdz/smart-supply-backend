@@ -43,7 +43,7 @@ const exportProductsExcel = async(req: Request, res: Response)=> {
       { header: "Proveedor", key: "supplier", width: 25 },
     ];
 
-    const products = await Product.find().populate("category", "name");
+    const products = await Product.find().populate("category", "name").populate("supplier", "supplierName");
 
     for (const prod of products) {
       const precioUnitario = `$${prod.unitprice.toFixed(2)}`;
@@ -59,7 +59,7 @@ const exportProductsExcel = async(req: Request, res: Response)=> {
         total,
         prod.maxStock,
         prod.minStock,
-        (prod.supplier as any)?.name || "Sin proveedor",
+        (prod.supplier as any)?.supplierName|| "Sin proveedor",
         
       ]).commit();
     }
