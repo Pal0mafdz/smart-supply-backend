@@ -77,7 +77,10 @@ const registerPayment = async(req: Request, res: Response) => {
 
       await Table.findOneAndUpdate(
         {order: order._id, state: "abierta"},
-        {$set: {state: "cerrada", closedAt: new Date()}}
+        {$set: {state: "cerrada", closedAt: new Date(),
+          order: []
+        }
+      }
       )
 
       
