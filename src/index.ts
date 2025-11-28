@@ -10,6 +10,7 @@ import MyTableRoute from "./routes/TableRoute";
 import MySupplierRoute from "./routes/MySupplier";
 import { v2 as cloudinary } from 'cloudinary';
 import MySaleRoute from './routes/SaleRoute';
+import CashSessionRoute from "./routes/CashSessionRoute";
 
 
 mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string).then(()=>console.log("Connected to database!!"))
@@ -39,6 +40,7 @@ app.use("/api/my/recipe", MyRecipeRoute);
 app.use("/api/my/table", MyTableRoute);
 app.use("/api/my/supplier", MySupplierRoute);
 app.use("/api/my/sale", MySaleRoute);
+app.use("/api/my/cash-session", CashSessionRoute);
 
 app.listen(8000, ()=> {
     console.log("server started at port 8000")

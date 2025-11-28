@@ -8,8 +8,8 @@ import Table from "../models/table";
 
 const getPayments = async(req: Request, res: Response) =>{
   try{
-      const payments = await Payment.find({}).populate("user").sort({date: -1}); 
-      // const movements = await Payment.find({}).populate("product").populate("user").sort({date: -1});
+      const payments = await Payment.find({}).populate("cashier", "name").sort({paidAt: -1}); 
+      
       res.status(200).json(payments);
 
   }catch(error){
@@ -70,6 +70,7 @@ const registerPayment = async(req: Request, res: Response) => {
         amount: total,
         reference: reference || "",
         paidAt: new Date(),
+        cashier: userId,
  
       });
       await payment.save();

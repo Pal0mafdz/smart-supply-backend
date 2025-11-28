@@ -192,19 +192,29 @@ const openTable = async (req: Request, res: Response) => {
       (d) => d.recipe.toString() === recipeId && d.status === "pendiente"
     );
 
-    if (existingDish) {
-      existingDish.quantity += quantity;
-      existingDish.subtotal = (existingDish.subtotal ?? 0) + subtotal;
-      if (note) existingDish.note = note;
-    } else {
+    // if (existingDish) {
+    //   existingDish.quantity += quantity;
+    //   existingDish.subtotal = (existingDish.subtotal ?? 0) + subtotal;
+    //   if (note) existingDish.note = note;
+    // } else {
+    //   order.dishes.push({
+    //     recipe: recipe._id,
+    //     quantity,
+    //     note,
+    //     subtotal,
+    //     status: "pendiente",
+    //   });
+    // }
+    for (let i = 0; i < quantity; i++) {
       order.dishes.push({
         recipe: recipe._id,
-        quantity,
+        quantity: 1,
         note,
-        subtotal,
+        subtotal: recipe.totalCost,
         status: "pendiente",
       });
     }
+    
 
     order.total = order.dishes.reduce((acc, d) => acc + (d.subtotal ?? 0), 0);
     await order.save();
@@ -384,13 +394,22 @@ const sendToKitchen = async(req: Request, res: Response) => {
         dish.status = "en preparacion";
 
         const recipe = dish.recipe as any;
-        const sale = new Sale({
-          order: order._id,
-          recipe: recipe._id,
-          price: recipe.totalCost,
-        });
-        await sale.save();
-        sales.push(sale);
+        // const sale = new Sale({
+        //   order: order._id,
+        //   recipe: recipe._id,
+        //   price: recipe.totalCost,
+        // });
+        // await sale.save();
+        // sales.push(sale);
+        for (let i = 0; i < dish.quantity; i++) {
+          const sale = new Sale({
+            order: order._id,
+            recipe: recipe._id,
+            price: recipe.totalCost,
+          });
+          await sale.save();
+          sales.push(sale);
+        }
       }
     }
 
